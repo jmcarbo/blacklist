@@ -27,15 +27,20 @@ func (d *DNSChecker) Status(ipv4 string) (blacklists []string, errors []error) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(d.domains))
+	var mutex = &sync.Mutex{}
 	for _, dm := range d.domains {
 		go func(dm string) {
 			defer wg.Done()
 			bl, err := d.digger.digShort(rIP + "." + dm)
 			if err != nil {
+				mutex.Lock()
 				errors = append(errors, err)
+				mutex.Unlock()
 			}
 			if bl {
+				mutex.Lock()
 				blacklists = append(blacklists, dm)
+				mutex.Unlock()
 			}
 		}(dm)
 	}
